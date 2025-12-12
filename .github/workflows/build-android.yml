@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx1536m"
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError"
 
     steps:
       # Checkout repository
@@ -36,6 +36,12 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      # Setup Gradle with caching
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-disabled: true
+
       # Make scripts executable
       - name: Make scripts executable
         run: chmod +x ./scripts/prepare-capacitor.sh
@@ -44,20 +50,31 @@ jobs:
       - name: Prepare Capacitor
         run: ./scripts/prepare-capacitor.sh ${{ github.event.inputs.build_id }}
 
+      # Configure Gradle properties
+      - name: Configure Gradle properties
+        run: |
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/gradle.properties <<EOL
+          org.gradle.daemon=false
+          org.gradle.parallel=false
+          org.gradle.caching=false
+          org.gradle.configureondemand=false
+          EOL
+
       # Make Gradle wrapper executable
       - name: Make Gradle executable
         run: chmod +x app/android/gradlew
 
-      # Clean Gradle cache to avoid corrupted jar issues
-      - name: Clean Gradle cache
-        run: rm -rf ~/.gradle/caches/
-
-      # Build Release APK
+      # Build Release APK with retries
       - name: Build Release APK
-        run: |
-          cd app/android
-          ./gradlew clean
-          ./gradlew assembleRelease
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_on: error
+          command: |
+            cd app/android
+            ./gradlew clean assembleRelease --no-daemon --stacktrace
 
       # Upload APK Artifact
       - name: Upload APK Artifact
