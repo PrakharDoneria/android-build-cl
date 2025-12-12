@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: "Folder name inside /builds containing the app source"
+        description: "Folder within /builds containing the app"
         required: true
 
 jobs:
@@ -12,37 +12,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install Java JDK
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # ✅ Fix for Windows developers — give executable permission on Linux runner
-      - name: Make prepare script executable
+      - name: Make script executable
         run: chmod +x ./scripts/prepare-capacitor.sh
 
-      - name: Prepare Capacitor Project
+      - name: Prepare Capacitor
         run: ./scripts/prepare-capacitor.sh ${{ github.event.inputs.build_id }}
 
-      - name: Build Android Release APK
+      - name: Build Release APK
         run: |
           cd app/android
           ./gradlew assembleRelease
 
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: apk
           path: app/android/app/build/outputs/apk/release/*.apk
