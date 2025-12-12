@@ -55,7 +55,7 @@ jobs:
         run: |
           mkdir -p ~/.gradle
           cat > ~/.gradle/gradle.properties <<EOL
-          org.gradle.daemon=true
+          org.gradle.daemon=false
           org.gradle.parallel=false
           org.gradle.caching=false
           org.gradle.configureondemand=false
@@ -69,7 +69,7 @@ jobs:
       - name: Build Release APK
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 20
+          timeout_minutes: 15
           max_attempts: 3
           retry_on: error
           command: |
