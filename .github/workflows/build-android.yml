@@ -67,6 +67,7 @@ jobs:
         run: |
           rm -rf ~/.gradle/caches/
           mkdir -p ~/.gradle/caches
+          # Ensure proper permissions to prevent race conditions
           chmod -R 755 ~/.gradle
 
       # Make Gradle wrapper executable
@@ -74,6 +75,7 @@ jobs:
         run: chmod +x app/android/gradlew
       
       # Create project-level Gradle properties
+      # Note: Intentionally duplicates global settings for defense-in-depth
       - name: Create project Gradle properties
         run: |
           cat > app/android/gradle.properties <<EOL
