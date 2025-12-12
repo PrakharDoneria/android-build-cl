@@ -55,7 +55,6 @@ jobs:
         run: |
           mkdir -p ~/.gradle
           cat > ~/.gradle/gradle.properties <<EOL
-          org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError
           org.gradle.daemon=true
           org.gradle.parallel=false
           org.gradle.caching=false
