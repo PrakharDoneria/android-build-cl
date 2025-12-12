@@ -14,12 +14,18 @@ if [ -d "$SRC_DIR" ]; then
   cp -r $SRC_DIR/* .
 fi
 
+# Initialize package.json if missing
+if [ ! -f package.json ]; then
+  echo "package.json missing — initializing project..."
+  npm init -y
+fi
+
+# Install all Capacitor + TS dependencies first
+npm install @capacitor/core @capacitor/cli @capacitor/android typescript ts-node @types/node
+
 # If capacitor.config.ts exists, convert to JSON safely
 if [ -f "capacitor.config.ts" ]; then
   echo "Converting capacitor.config.ts to capacitor.config.json"
-
-  # Install ts-node and typescript
-  npm install ts-node typescript @types/node
 
   # Create temporary convert script
   cat > convert-config.js <<EOL
@@ -52,15 +58,6 @@ if [ ! -f "capacitor.config.json" ]; then
 }
 EOL
 fi
-
-# Initialize package.json if missing
-if [ ! -f package.json ]; then
-  echo "package.json missing — initializing project..."
-  npm init -y
-fi
-
-# Install Capacitor dependencies
-npm install @capacitor/core @capacitor/cli @capacitor/android
 
 # Add Android platform if missing
 if [ ! -d "android" ]; then
