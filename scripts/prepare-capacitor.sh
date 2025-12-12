@@ -14,13 +14,33 @@ if [ -d "$SRC_DIR" ]; then
   cp -r $SRC_DIR/* .
 fi
 
-# If capacitor.config.ts exists, convert to JSON
+# If capacitor.config.ts exists, convert to JSON safely
 if [ -f "capacitor.config.ts" ]; then
   echo "Converting capacitor.config.ts to capacitor.config.json"
-  npx ts-node -e "import config from './capacitor.config'; const fs = require('fs'); fs.writeFileSync('capacitor.config.json', JSON.stringify(config, null, 2));"
+
+  # Install ts-node and typescript
+  npm install ts-node typescript @types/node
+
+  # Create temporary convert script
+  cat > convert-config.js <<EOL
+const { register } = require('ts-node');
+register({
+  compilerOptions: { module: "CommonJS" }
+});
+const fs = require('fs');
+const config = require('./capacitor.config.ts').default;
+fs.writeFileSync('capacitor.config.json', JSON.stringify(config, null, 2));
+console.log('capacitor.config.json created from TS config');
+EOL
+
+  # Run conversion
+  node convert-config.js
+
+  # Remove temporary script
+  rm convert-config.js
 fi
 
-# If capacitor.config.json missing, generate minimal one
+# If capacitor.config.json missing, create minimal config
 if [ ! -f "capacitor.config.json" ]; then
   echo "capacitor.config.json missing — generating minimal config..."
   cat > capacitor.config.json <<EOL
@@ -40,7 +60,7 @@ if [ ! -f package.json ]; then
 fi
 
 # Install Capacitor dependencies
-npm install @capacitor/core @capacitor/cli @capacitor/android ts-node typescript
+npm install @capacitor/core @capacitor/cli @capacitor/android
 
 # Add Android platform if missing
 if [ ! -d "android" ]; then
