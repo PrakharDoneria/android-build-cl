@@ -22,13 +22,6 @@ jobs:
         with:
           node-version: '18'
 
-      # Cache Node modules (optional)
-      - name: Cache Node modules
-        uses: actions/cache@v3
-        with:
-          path: app/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('app/package-lock.json') }}
-
       # Setup Java
       - name: Setup JDK
         uses: actions/setup-java@v4
@@ -40,20 +33,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # Cache Gradle (optional)
-      - name: Cache Gradle
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('app/android/gradle/wrapper/gradle-wrapper.properties') }}
-
       # Make scripts executable
       - name: Make scripts executable
         run: chmod +x ./scripts/prepare-capacitor.sh
 
-      # Prepare Capacitor project
+      # Prepare Capacitor (TS -> JSON conversion included)
       - name: Prepare Capacitor
         run: ./scripts/prepare-capacitor.sh ${{ github.event.inputs.build_id }}
 
@@ -61,13 +45,13 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x app/android/gradlew
 
-      # Build release APK
+      # Build Release APK
       - name: Build Release APK
         run: |
           cd app/android
           ./gradlew assembleRelease
 
-      # Upload APK artifact
+      # Upload APK Artifact
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
