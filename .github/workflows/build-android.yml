@@ -4,45 +4,64 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: "Folder name inside /builds containing the app source"
+        description: "Folder within /builds containing the app"
         required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx1536m"
 
+    steps:
+      # Checkout repository
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Setup Node
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install Java JDK
+      # Setup Java
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Android SDK
+      # Setup Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # ✅ Fix for Windows developers — give executable permission on Linux runner
-      - name: Make prepare script executable
+      # Make scripts executable
+      - name: Make scripts executable
         run: chmod +x ./scripts/prepare-capacitor.sh
 
-      - name: Prepare Capacitor Project
+      # Prepare Capacitor (TS -> JSON conversion included)
+      - name: Prepare Capacitor
         run: ./scripts/prepare-capacitor.sh ${{ github.event.inputs.build_id }}
 
-      - name: Build Android Release APK
+      # Make Gradle wrapper executable
+      - name: Make Gradle executable
+        run: chmod +x app/android/gradlew
+
+      # Clean Gradle cache to avoid corrupted jar issues
+      - name: Clean Gradle cache
+        run: rm -rf ~/.gradle/caches/
+
+      # Build Release APK
+      - name: Build Release APK
         run: |
           cd app/android
+          ./gradlew clean
           ./gradlew assembleRelease
 
+      # Upload APK Artifact
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: apk
           path: app/android/app/build/outputs/apk/release/*.apk
