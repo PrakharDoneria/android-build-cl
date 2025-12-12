@@ -1,41 +1,35 @@
 #!/bin/bash
 set -e
 
-BUILD_ID="$1"
-
-if [ -z "$BUILD_ID" ]; then
-    echo "ERROR: build_id argument missing."
-    exit 1
-fi
-
+BUILD_ID=$1
 echo "Preparing build folder: $BUILD_ID"
 
-# ensure builds folder exists
-if [ ! -d "builds/$BUILD_ID" ]; then
-    echo "ERROR: Folder builds/$BUILD_ID does not exist."
-    exit 1
+BUILD_DIR="app"
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
+
+# If package.json missing, create minimal project
+if [ ! -f package.json ]; then
+  echo "package.json missing — generating minimal capacitor project..."
+  npm init -y
 fi
 
-# Start clean workspace
-rm -rf app
-mkdir app
+# Install Capacitor core & CLI
+npm install @capacitor/core @capacitor/cli
 
-# Copy uploaded build source into app/
-cp -r builds/$BUILD_ID/* app/
-
-cd app
-
-# Install node dependencies (user's project might include its own package.json)
-if [ -f package.json ]; then
-    echo "Installing user project dependencies..."
-    npm install
-else
-    echo "package.json missing — generating minimal capacitor project..."
-    npm init -y
-    npm install @capacitor/core @capacitor/cli
+# Add Android platform if missing
+if [ ! -d "android" ]; then
+  echo "Adding Android platform..."
+  npx cap add android
 fi
 
-# Sync Capacitor platform
+# Copy uploaded files
+SRC_DIR="../builds/$BUILD_ID"
+if [ -d "$SRC_DIR" ]; then
+  cp -r $SRC_DIR/* .
+fi
+
+# Sync Capacitor with Android
 npx cap sync android
 
-echo "Capacitor Android project ready."
+echo "Capacitor project ready for Android build"
